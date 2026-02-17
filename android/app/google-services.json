@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "294591946836",
+    "firebase_url": "https://guardia-ddc04-default-rtdb.firebaseio.com",
+    "project_id": "guardia-ddc04",
+    "storage_bucket": "guardia-ddc04.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:294591946836:android:d145d5d170f84594f84dc1",
+        "android_client_info": {
+          "package_name": "com.example.guardia_movil"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXq4uqBcU8SzKpw49Mv6PiL-uVwoZp35c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
