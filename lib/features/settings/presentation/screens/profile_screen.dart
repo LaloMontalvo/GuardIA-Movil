@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../../app/theme/app_colors.dart';
 
-/// Pantalla de perfil — Premium
+/// Pantalla de perfil — Premium Redesign
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -28,7 +28,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     _phoneCtrl = TextEditingController(text: user?.phone ?? '55-1234-5678');
     _staggerCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 800),
     )..forward();
   }
 
@@ -42,7 +42,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Widget _stagger(int i, Widget child) {
-    final s = (i * 0.12).clamp(0.0, 0.7);
+    final s = (i * 0.1).clamp(0.0, 0.6);
     final e = (s + 0.4).clamp(0.0, 1.0);
     return AnimatedBuilder(
       animation: _staggerCtrl,
@@ -80,27 +80,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Gradient AppBar with avatar
+          // Expanded Gradient AppBar
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 220, // Increased height to prevent overlap
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                'Mi Perfil',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
+                centerTitle: true,
+                titlePadding: const EdgeInsets.only(bottom: 16),
+                title: const Text(
+                  'Mi Perfil',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.white,
+                  ),
+                ),
               background: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1A1A3E) : AppColors.primaryBlue,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A3E), const Color(0xFF121212)]
+                        : [AppColors.primaryBlue, AppColors.primaryBlueDark],
+                  ),
                 ),
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 40),
-                      // Avatar with gradient ring
+                      const SizedBox(height: 10), // Reduced top spacing
+                      // Avatar with glowing ring
                       Container(
-                        padding: const EdgeInsets.all(3),
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const LinearGradient(
@@ -108,43 +120,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.accentCyan.withValues(alpha: 0.3),
-                              blurRadius: 12,
+                              color: AppColors.accentCyan.withValues(alpha: 0.4),
+                              blurRadius: 16,
+                              spreadRadius: 2,
                             ),
                           ],
                         ),
                         child: CircleAvatar(
-                          radius: 36,
+                          radius: 42,
                           backgroundColor: isDark
-                              ? const Color(0xFF1A1A3E)
+                              ? const Color(0xFF1E1E2C)
                               : Colors.white,
                           child: Text(
                             (user?.name ?? 'A')[0].toUpperCase(),
                             style: const TextStyle(
-                              fontSize: 28,
+                              fontSize: 32,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primaryBlue,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       // Role badge
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
+                          horizontal: 16,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Text(
                           role,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
@@ -155,170 +172,190 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ),
           ),
 
-          // Form content
+          // Form content with improved spacing
           SliverPadding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // Personal info card
-                _stagger(
-                  0,
-                  _fieldCard([
-                    _premiumField(_nameCtrl, 'Nombre completo', Icons.person_outline),
-                    const Divider(height: 1, indent: 56),
-                    _premiumField(
-                      _emailCtrl,
-                      'Correo electrónico',
-                      Icons.email_outlined,
-                      enabled: false,
-                    ),
-                    const Divider(height: 1, indent: 56),
-                    _premiumField(_phoneCtrl, 'Teléfono', Icons.phone_outlined),
-                    const Divider(height: 1, indent: 56),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedTz,
-                        decoration: const InputDecoration(
-                          labelText: 'Zona horaria',
-                          prefixIcon: Icon(Icons.schedule_outlined),
-                          border: InputBorder.none,
-                        ),
-                        items: [
-                          'America/Mexico_City',
-                          'America/Cancun',
-                          'America/Monterrey',
-                          'America/Tijuana',
-                        ]
-                            .map((tz) => DropdownMenuItem(
-                                  value: tz,
-                                  child: Text(tz.split('/').last),
-                                ))
-                            .toList(),
-                        onChanged: (v) => setState(() => _selectedTz = v!),
-                      ),
-                    ),
-                  ]),
-                ),
-                const SizedBox(height: 16),
-
-                // Save button
+                // Personal info section
+                _stagger(0, _sectionTitle(theme, 'Información Personal')),
+                const SizedBox(height: 12),
                 _stagger(
                   1,
                   Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: AppColors.primaryBlue,
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.08),
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Perfil actualizado'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(
-                            child: Text(
-                              'Guardar cambios',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                    child: Column(
+                      children: [
+                        _premiumField(_nameCtrl, 'Nombre completo', Icons.person_outline),
+                        _divider(theme),
+                        _premiumField(
+                          _emailCtrl,
+                          'Correo electrónico',
+                          Icons.email_outlined,
+                          enabled: false,
+                        ),
+                        _divider(theme),
+                        _premiumField(_phoneCtrl, 'Teléfono', Icons.phone_outlined),
+                        _divider(theme),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
                           ),
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedTz,
+                            decoration: InputDecoration(
+                              labelText: 'Zona horaria',
+                              labelStyle: TextStyle(color: theme.hintColor),
+                              prefixIcon: Icon(Icons.schedule_outlined, color: theme.primaryColor),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                            icon: Icon(Icons.arrow_drop_down_rounded, color: theme.hintColor),
+                            dropdownColor: theme.cardColor,
+                            style: theme.textTheme.bodyLarge,
+                            items: [
+                              'America/Mexico_City',
+                              'America/Cancun',
+                              'America/Monterrey',
+                              'America/Tijuana',
+                            ]
+                                .map((tz) => DropdownMenuItem(
+                                      value: tz,
+                                      child: Text(tz.split('/').last),
+                                    ))
+                                .toList(),
+                            onChanged: (v) => setState(() => _selectedTz = v!),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+
+                // Save button
+                _stagger(
+                  2,
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Perfil actualizado correctamente'),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        elevation: 8,
+                        shadowColor: AppColors.primaryBlue.withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Guardar cambios',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+
+                const SizedBox(height: 40),
 
                 // Security section
+                _stagger(3, _sectionTitle(theme, 'Seguridad y Cuenta')),
+                const SizedBox(height: 12),
                 _stagger(
-                  2,
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.security,
-                              size: 16,
-                              color: Colors.red,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Seguridad',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ],
+                  4,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.08),
                       ),
-                      const SizedBox(height: 8),
-                      _fieldCard([
+                    ),
+                    child: Column(
+                      children: [
                         ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                           leading: _iconBox(
                             Icons.lock_outline,
                             AppColors.primaryBlue,
                           ),
-                          title: const Text('Cambiar contraseña'),
-                          trailing: const Icon(Icons.chevron_right, size: 20),
+                          title: const Text('Cambiar contraseña', style: TextStyle(fontWeight: FontWeight.w600)),
+                          trailing: Icon(Icons.chevron_right, size: 22, color: theme.hintColor),
                           onTap: _showChangePassword,
                         ),
-                        Divider(
-                          height: 1,
-                          indent: 56,
-                          color: theme.dividerColor.withValues(alpha: 0.08),
-                        ),
+                        _divider(theme),
                         ListTile(
-                          leading: _iconBox(Icons.devices, Colors.orange),
-                          title: const Text('Sesiones activas'),
-                          subtitle: const Text('2 dispositivos'),
-                          trailing: const Icon(Icons.chevron_right, size: 20),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          leading: _iconBox(Icons.devices_rounded, Colors.orange),
+                          title: const Text('Sesiones activas', style: TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: Text('2 dispositivos', style: TextStyle(color: theme.hintColor, fontSize: 13)),
+                          trailing: Icon(Icons.chevron_right, size: 22, color: theme.hintColor),
                           onTap: () {},
                         ),
-                        Divider(
-                          height: 1,
-                          indent: 56,
-                          color: theme.dividerColor.withValues(alpha: 0.08),
-                        ),
+                        _divider(theme),
                         ListTile(
-                          leading: _iconBox(Icons.security, Colors.green),
-                          title: const Text('Verificación en dos pasos'),
-                          subtitle: const Text('Desactivada'),
-                          trailing: Switch(value: false, onChanged: (v) {}),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          leading: _iconBox(Icons.security_rounded, Colors.green),
+                          title: const Text('Verificación en dos pasos', style: TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: Text('Recomendado', style: TextStyle(color: Colors.green.shade700, fontSize: 13, fontWeight: FontWeight.w500)),
+                          trailing: Switch.adaptive(
+                            value: false, 
+                            onChanged: (v) {},
+                            activeColor: AppColors.primaryBlue,
+                          ),
                         ),
-                      ]),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
+                
+                const SizedBox(height: 40),
+                
+                // Logout (Optional addition given the redesign context)
+                _stagger(
+                  5,
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: _showLogoutConfirmation,
+                      icon: const Icon(Icons.logout, size: 20),
+                      label: const Text('Cerrar sesión'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ),
+                
                 const SizedBox(height: 40),
               ]),
             ),
@@ -328,14 +365,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
+  Widget _sectionTitle(ThemeData theme, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Text(
+        title,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: theme.colorScheme.onSurface.withOpacity(0.8),
+        ),
+      ),
+    );
+  }
+
+  Widget _divider(ThemeData theme) {
+    return Divider(
+      height: 1,
+      indent: 60,
+      endIndent: 20,
+      color: theme.dividerColor.withValues(alpha: 0.08),
+    );
+  }
+
   Widget _iconBox(IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, size: 18, color: color),
+      child: Icon(icon, size: 22, color: color),
     );
   }
 
@@ -345,37 +404,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     IconData icon, {
     bool enabled = true,
   }) {
+    // Determine color based on enabled state
+    final color = enabled ? AppColors.primaryBlue : Colors.grey;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: TextFormField(
         controller: ctrl,
         enabled: enabled,
+        style: const TextStyle(fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon),
+          labelStyle: TextStyle(color: enabled ? null : Colors.grey),
+          prefixIcon: Icon(icon, color: color),
           border: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 8),
         ),
       ),
-    );
-  }
-
-  Widget _fieldCard(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(children: children),
     );
   }
 
@@ -385,37 +431,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       builder: (context) => AlertDialog(
         title: const Text('Cambiar contraseña'),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
               obscureText: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Contraseña actual',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.lock_outline),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextFormField(
               obscureText: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Nueva contraseña',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.vpn_key_outlined),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextFormField(
               obscureText: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Confirmar contraseña',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.check_circle_outline),
               ),
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -427,7 +480,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 ),
               );
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             child: const Text('Cambiar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Estás seguro que deseas cerrar sesión?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(authStateProvider.notifier).logout();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.errorRed,
+            ),
+            child: const Text('Cerrar sesión'),
           ),
         ],
       ),

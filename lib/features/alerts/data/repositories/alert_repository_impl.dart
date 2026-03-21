@@ -3,30 +3,31 @@ import '../../domain/enums/alert_type.dart';
 import '../../domain/enums/alert_status.dart';
 import '../../domain/enums/priority.dart';
 import '../../domain/repositories/alert_repository.dart';
-import '../../../../core/network/mock_api_service.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../../core/constants/api_constants.dart';
 
 class AlertRepositoryImpl implements AlertRepository {
-  final MockApiService _mockApiService;
+  final DioClient _dioClient;
 
-  AlertRepositoryImpl(this._mockApiService);
+  AlertRepositoryImpl(this._dioClient);
 
   @override
   Future<List<Alert>> getAlerts() async {
-    final response = await _mockApiService.getAlerts();
-    final alertsJson = response.data['alerts'] as List;
+    final response = await _dioClient.get(ApiConstants.alerts);
+    final alertsJson = response.data['items'] as List;
     
     return alertsJson.map((json) => _alertFromJson(json)).toList();
   }
 
   @override
   Future<Alert> getAlertDetail(String id) async {
-    final response = await _mockApiService.getAlertDetail(id);
-    return _alertFromJson(response.data);
+    final response = await _dioClient.get(ApiConstants.alertDetail(id));
+    return _alertFromJson(response.data['item'] ?? response.data);
   }
 
   @override
   Future<Alert> updateAlert(String id, String status, String? note) async {
-    final response = await _mockApiService.updateAlert(id, {
+    await _dioClient.patch('${ApiConstants.alerts}/$id/workflow', data: {
       'status': status,
       'note': note,
     });

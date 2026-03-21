@@ -69,7 +69,11 @@ class _CameraDetailScreenState extends ConsumerState<CameraDetailScreen>
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
                 title: Text(camera.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white,
+                    )),
                 background: Container(
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1A1A3E) : AppColors.primaryBlue,

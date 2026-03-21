@@ -132,15 +132,7 @@ class MockApiService {
             'zone': 'Zona A',
             'isFavorite': false,
           },
-          {
-            'id': 'cam_6',
-            'name': 'Cámara Salida Emergencia',
-            'location': 'Puerta sur',
-            'status': 'maintenance',
-            'streamUrl': null,
-            'zone': 'Zona B',
-            'isFavorite': false,
-          },
+
           {
             'id': 'cam_7',
             'name': 'Cámara Recepción',

@@ -1,25 +1,26 @@
 import '../../domain/entities/camera.dart';
 import '../../domain/enums/camera_status.dart';
 import '../../domain/repositories/camera_repository.dart';
-import '../../../../core/network/mock_api_service.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../../core/constants/api_constants.dart';
 
 class CameraRepositoryImpl implements CameraRepository {
-  final MockApiService _mockApiService;
+  final DioClient _dioClient;
 
-  CameraRepositoryImpl(this._mockApiService);
+  CameraRepositoryImpl(this._dioClient);
 
   @override
   Future<List<Camera>> getCameras() async {
-    final response = await _mockApiService.getCameras();
-    final camerasJson = response.data['cameras'] as List;
+    final response = await _dioClient.get(ApiConstants.cameras);
+    final camerasJson = response.data['items'] as List;
     
     return camerasJson.map((json) => _cameraFromJson(json)).toList();
   }
 
   @override
   Future<Camera> getCameraDetail(String id) async {
-    final response = await _mockApiService.getCameraDetail(id);
-    return _cameraFromJson(response.data);
+    final response = await _dioClient.get(ApiConstants.cameraDetail(id));
+    return _cameraFromJson(response.data['item'] ?? response.data);
   }
 
   @override

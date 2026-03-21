@@ -22,7 +22,7 @@ import '../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../features/cameras/presentation/screens/cameras_list_screen.dart';
 import '../features/alerts/presentation/screens/alerts_list_screen.dart';
 import '../features/map/presentation/screens/map_screen.dart';
-import '../features/settings/presentation/screens/more_screen.dart';
+// import '../features/settings/presentation/screens/more_screen.dart'; // Replaced by OperatorSettingsScreen
 
 // Camera screens
 import '../features/cameras/presentation/screens/camera_detail_screen.dart';
@@ -56,6 +56,21 @@ import '../features/settings/presentation/screens/storage_screen.dart';
 // Help
 import '../features/help/presentation/screens/help_screen.dart';
 import '../features/help/presentation/screens/about_screen.dart';
+
+// Operator (Vecino)
+import '../features/operator/presentation/screens/operator_shell.dart';
+import '../features/operator/presentation/screens/operator_home_screen.dart';
+import '../features/operator/presentation/screens/operator_create_report_screen.dart';
+import '../features/operator/presentation/screens/operator_report_confirmation_screen.dart';
+import '../features/operator/presentation/screens/operator_report_history_screen.dart';
+import '../features/operator/presentation/screens/operator_report_detail_screen.dart';
+import '../features/operator/presentation/screens/operator_notifications_screen.dart';
+import '../features/operator/presentation/screens/operator_notification_detail_screen.dart';
+import '../features/operator/presentation/screens/operator_my_camera_screen.dart';
+import '../features/operator/presentation/screens/operator_camera_live_screen.dart';
+import '../features/operator/presentation/screens/operator_panic_screen.dart';
+import '../features/operator/presentation/screens/operator_emergency_active_screen.dart';
+import '../features/operator/presentation/screens/operator_settings_screen.dart';
 
 // Theme
 import 'theme/app_colors.dart';
@@ -132,7 +147,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (guard.isLoggedIn &&
           guard.isProfileValid &&
           loc == '/login') {
-        return '/home';
+        final user = authState.user;
+        if (user != null && user.isOperator) {
+            return '/operator-home';
+        }
+        return '/home'; // El resto (Admin) va al dashboard clásico
+      }
+
+      // --- Caso 4: Evitar que el Operador entre a rutas del Admin ---
+      if (guard.isLoggedIn && authState.user != null) {
+        final user = authState.user!;
+        if (user.isOperator) {
+           // Si el operador intenta entrar a /home u otras relacionadas al admin, redirigirlo a su home.
+           if (loc.startsWith('/home') || loc == '/cameras' || loc == '/map') {
+             return '/operator-home';
+           }
+        } else if (user.isAdmin) {
+           // Si el admin intenta entrar a vistas del operador, redirigirlo a su home.
+           if (loc.startsWith('/operator')) {
+             return '/home';
+           }
+        }
       }
 
       // Fallback: también verificar el estado Riverpod por compatibilidad
@@ -165,7 +200,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/cameras', builder: (context, state) => const CamerasListScreen()),
           GoRoute(path: '/alerts', builder: (context, state) => const AlertsListScreen()),
           GoRoute(path: '/map', builder: (context, state) => const MapScreen()),
-          GoRoute(path: '/more', builder: (context, state) => const MoreScreen()),
+          GoRoute(path: '/more', builder: (context, state) => const OperatorSettingsScreen()),
         ],
       ),
 
@@ -224,6 +259,39 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/help', pageBuilder: (context, state) => _buildAnimatedPage(const HelpScreen(), state)),
       GoRoute(path: '/about', pageBuilder: (context, state) => _buildAnimatedPage(const AboutScreen(), state)),
       GoRoute(path: '/help/ticket', pageBuilder: (context, state) => _buildAnimatedPage(const CreateTicketScreen(), state)),
+
+      // Operator Shell with Bottom Navigation (5 tabs)
+      ShellRoute(
+        builder: (context, state, child) => OperatorShell(child: child),
+        routes: [
+          GoRoute(path: '/operator-home', builder: (context, state) => const OperatorHomeScreen()),
+          GoRoute(path: '/operator-report', builder: (context, state) => const OperatorCreateReportScreen()),
+          GoRoute(path: '/operator-notifications', builder: (context, state) => const OperatorNotificationsScreen()),
+          GoRoute(path: '/operator-camera', builder: (context, state) => const OperatorMyCameraScreen()),
+          GoRoute(path: '/operator-settings', builder: (context, state) => const OperatorSettingsScreen()),
+        ],
+      ),
+
+      // Operator sub-routes (full screen, no bottom nav)
+      GoRoute(
+        path: '/operator-report-confirmation/:folio',
+        pageBuilder: (context, state) => _buildAnimatedPage(
+          OperatorReportConfirmationScreen(folio: state.pathParameters['folio'] ?? 'N/A'), state),
+      ),
+      GoRoute(path: '/operator-report-history', pageBuilder: (context, state) => _buildAnimatedPage(const OperatorReportHistoryScreen(), state)),
+      GoRoute(
+        path: '/operator-report-detail/:id',
+        pageBuilder: (context, state) => _buildAnimatedPage(
+          OperatorReportDetailScreen(reportId: state.pathParameters['id']!), state),
+      ),
+      GoRoute(
+        path: '/operator-notification-detail/:id',
+        pageBuilder: (context, state) => _buildAnimatedPage(
+          OperatorNotificationDetailScreen(notificationId: state.pathParameters['id']!), state),
+      ),
+      GoRoute(path: '/operator-camera-live', pageBuilder: (context, state) => _buildAnimatedPage(const OperatorCameraLiveScreen(), state)),
+      GoRoute(path: '/operator-panic', pageBuilder: (context, state) => _buildAnimatedPage(const OperatorPanicScreen(), state)),
+      GoRoute(path: '/operator-emergency-active', pageBuilder: (context, state) => _buildAnimatedPage(const OperatorEmergencyActiveScreen(), state)),
     ],
   );
 });
@@ -307,9 +375,9 @@ class _MainScaffold extends StatelessWidget {
                   onTap: () => context.go('/map'),
                 ),
                 _NavItem(
-                  icon: Icons.grid_view_outlined,
-                  activeIcon: Icons.grid_view_rounded,
-                  label: 'Más',
+                  icon: Icons.settings_outlined,
+                  activeIcon: Icons.settings_rounded,
+                  label: 'Ajustes',
                   isActive: selectedIndex == 4,
                   onTap: () => context.go('/more'),
                 ),
@@ -384,7 +452,7 @@ class _NavItem extends StatelessWidget {
                 key: ValueKey(isActive),
                 size: isActive ? 26 : 24,
                 color: isActive
-                    ? AppColors.primaryBlue
+                    ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.primaryBlue)
                     : Colors.grey.shade500,
               ),
             ),
@@ -395,7 +463,7 @@ class _NavItem extends StatelessWidget {
                 fontSize: isActive ? 11 : 10,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                 color: isActive
-                    ? AppColors.primaryBlue
+                    ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.primaryBlue)
                     : Colors.grey.shade500,
               ),
               child: Text(label),

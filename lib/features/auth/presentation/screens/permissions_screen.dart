@@ -326,6 +326,9 @@ class _PermissionCardState extends State<_PermissionCard>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultColor = isDark ? Colors.white : AppColors.primaryBlue;
+
     return SlideTransition(
       position: _slideAnim,
       child: FadeTransition(
@@ -348,14 +351,16 @@ class _PermissionCardState extends State<_PermissionCard>
                   decoration: BoxDecoration(
                     color: widget.isGranted
                         ? AppColors.successGreen.withOpacity(0.15)
-                        : AppColors.primaryBlue.withOpacity(0.1),
+                        : (isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : AppColors.primaryBlue.withOpacity(0.1)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     widget.isGranted ? Icons.check_circle_rounded : widget.icon,
                     color: widget.isGranted
                         ? AppColors.successGreen
-                        : AppColors.primaryBlue,
+                        : defaultColor,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -388,7 +393,7 @@ class _PermissionCardState extends State<_PermissionCard>
                   TextButton(
                     onPressed: widget.onRequest,
                     style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primaryBlue,
+                      foregroundColor: defaultColor,
                     ),
                     child: const Text('Permitir'),
                   )

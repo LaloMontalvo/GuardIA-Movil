@@ -1,17 +1,21 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/role.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../../../core/storage/secure_storage_service.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/exceptions.dart';
 
 /// Implementación de AuthRepository usando Firebase Authentication
 class FirebaseAuthRepository implements AuthRepository {
   final fb.FirebaseAuth _firebaseAuth;
   final SecureStorageService _storageService;
+  final DioClient _dioClient;
 
-  FirebaseAuthRepository(this._storageService)
+  FirebaseAuthRepository(this._storageService, this._dioClient)
       : _firebaseAuth = fb.FirebaseAuth.instance;
 
   @override
@@ -27,16 +31,18 @@ class FirebaseAuthRepository implements AuthRepository {
         throw UnauthorizedException('No se pudo obtener el usuario');
       }
 
-      final user = _mapFirebaseUser(firebaseUser);
-
-      // Guardar datos localmente para persistir sesión
+      // Guardar access token temporalmente para que Dio pueda usarlo al traer el perfil
       await _storageService.saveAccessToken(await firebaseUser.getIdToken() ?? '');
+
+      final user = await _mapFirebaseUser(firebaseUser);
+
+      // Guardar el resto de datos localmente para persistir sesión
       await _storageService.saveRefreshToken(firebaseUser.refreshToken ?? '');
       await _storageService.saveUserData(jsonEncode({
         'id': user.id,
         'name': user.name,
         'email': user.email,
-        'role': 'user',
+        'role': user.role.name,
       }));
 
       return user;
@@ -82,15 +88,18 @@ class FirebaseAuthRepository implements AuthRepository {
       await firebaseUser.updateDisplayName(name);
       await firebaseUser.reload();
 
-      final user = _mapFirebaseUser(_firebaseAuth.currentUser ?? firebaseUser);
-
+      // Guardar access token para que Dio lo pueda usar
       await _storageService.saveAccessToken(await firebaseUser.getIdToken() ?? '');
+
+      final user = await _mapFirebaseUser(_firebaseAuth.currentUser ?? firebaseUser);
+
+      await _storageService.saveRefreshToken(firebaseUser.refreshToken ?? '');
       await _storageService.saveRefreshToken(firebaseUser.refreshToken ?? '');
       await _storageService.saveUserData(jsonEncode({
         'id': user.id,
         'name': name,
         'email': user.email,
-        'role': 'user',
+        'role': user.role.name,
       }));
 
       return user.copyWith(name: name);
@@ -113,7 +122,7 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<User?> getCurrentUser() async {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser != null) {
-      return _mapFirebaseUser(firebaseUser);
+      return await _mapFirebaseUser(firebaseUser);
     }
 
     // Fallback: leer de almacenamiento local
@@ -160,14 +169,41 @@ class FirebaseAuthRepository implements AuthRepository {
     return await _storageService.hasTokens();
   }
 
-  /// Mapea un FirebaseUser a nuestra entidad User
-  User _mapFirebaseUser(fb.User firebaseUser) {
+  /// Mapea un FirebaseUser a nuestra entidad User recuperando datos de la API PostgreSQL
+  Future<User> _mapFirebaseUser(fb.User firebaseUser) async {
+    String roleString = 'operator'; // Valor por defecto
+    String name = firebaseUser.displayName ?? firebaseUser.email?.split('@').first ?? 'Usuario';
+
+    try {
+      final response = await _dioClient.get('${ApiConstants.baseUrl}/users/${firebaseUser.uid}');
+      if (response.statusCode == 200 && response.data != null) {
+        final userData = response.data['item'] as Map<String, dynamic>;
+        
+        if (userData.containsKey('role')) {
+          roleString = userData['role'].toString().toLowerCase();
+        }
+        
+        if (userData.containsKey('fullName')) {
+          name = userData['fullName'].toString();
+        }
+      }
+    } catch (e) {
+      // Ignorar, fallback a default y firebase display name
+    }
+
+    // Normalizar role a ingles si viene del server en espanol
+    if (roleString == 'administrador' || roleString == 'admin') {
+      roleString = 'admin';
+    } else if (roleString == 'operador') {
+      roleString = 'operator';
+    }
+
     return User(
       id: firebaseUser.uid,
-      name: firebaseUser.displayName ?? firebaseUser.email?.split('@').first ?? 'Usuario',
+      name: name,
       email: firebaseUser.email ?? '',
       photoUrl: firebaseUser.photoURL,
-      role: Role.user,
+      role: Role.fromString(roleString),
     );
   }
 }

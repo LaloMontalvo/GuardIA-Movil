@@ -1,8 +1,8 @@
 class ApiConstants {
   ApiConstants._();
 
-  // Base URL (cambiar según entorno)
-  static const String baseUrl = 'https://api.guardia.com/v1';
+  // Base URL (producción)
+  static const String baseUrl = 'https://guardia-production-d5e6.up.railway.app';
   
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 30);

@@ -25,10 +25,13 @@ enum Role {
   static Role fromString(String value) {
     switch (value.toLowerCase()) {
       case 'admin':
+      case 'administrador':
         return Role.admin;
       case 'operator':
+      case 'operador':
         return Role.operator;
       case 'user':
+      case 'usuario':
       default:
         return Role.user;
     }

@@ -165,13 +165,13 @@ class _CameraCardState extends State<CameraCard>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryBlue.withValues(alpha: 0.08),
+                                color: (theme.brightness == Brightness.dark ? Colors.white : AppColors.primaryBlue).withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 widget.camera.zone,
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: AppColors.primaryBlue,
+                                  color: theme.brightness == Brightness.dark ? Colors.white : AppColors.primaryBlue,
                                   fontWeight: FontWeight.w500,
                                   fontSize: 11,
                                 ),

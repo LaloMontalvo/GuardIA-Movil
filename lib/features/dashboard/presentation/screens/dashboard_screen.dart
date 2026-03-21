@@ -86,11 +86,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authStateProvider).user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final camerasAsync = ref.watch(camerasProvider);
     final alertsAsync = ref.watch(alertsProvider);
     final favorites = ref.watch(favoriteCamerasProvider);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -156,7 +156,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // 1. Zone Status
-                  _animatedItem(0, _buildZoneStatus(context, camerasAsync)),
+                  _animatedItem(0, _buildZoneStatus(context, camerasAsync, isDark)),
                   const SizedBox(height: 20),
 
                   // 2. Quick Actions
@@ -208,7 +208,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   /// Zone status card with gradient border
-  Widget _buildZoneStatus(BuildContext context, AsyncValue<List<Camera>> camerasAsync) {
+  Widget _buildZoneStatus(BuildContext context, AsyncValue<List<Camera>> camerasAsync, bool isDark) {
     final theme = Theme.of(context);
 
     return camerasAsync.when(
@@ -291,7 +291,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         const SizedBox(width: 16),
                         _MiniStat(icon: Icons.videocam_off, value: '$offline', label: 'Offline', color: Colors.grey),
                         const SizedBox(width: 16),
-                        _MiniStat(icon: Icons.camera_alt, value: '${cameras.length}', label: 'Total', color: AppColors.primaryBlue),
+                        _MiniStat(icon: Icons.camera_alt, value: '${cameras.length}', label: 'Total', color: isDark ? Colors.white : AppColors.primaryBlue),
                       ],
                     ),
                   ),

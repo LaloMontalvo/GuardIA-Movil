@@ -108,7 +108,7 @@ class _MoreScreenState extends ConsumerState<MoreScreen>
                       radius: 28,
                       backgroundColor: isDark ? const Color(0xFF1A1A3E) : Colors.white,
                       child: Text(
-                        (user?.name ?? 'U')[0].toUpperCase(),
+                        (user?.name != null && user!.name.isNotEmpty) ? user.name[0].toUpperCase() : 'U',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,

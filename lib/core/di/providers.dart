@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import '../../../core/network/mock_api_service.dart';
 import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/network/dio_client.dart';
@@ -19,13 +20,12 @@ final mockApiServiceProvider = Provider<MockApiService>((ref) {
 final dioClientProvider = Provider<DioClient>((ref) {
   final storage = ref.watch(secureStorageServiceProvider);
   
+  // Instancia básica de Dio para el refresh token interceptor (evita circularidad)
+  final basicDio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+
   return DioClient(
     baseUrl: ApiConstants.baseUrl,
     authInterceptor: AuthInterceptor(storage),
-    refreshTokenInterceptor: RefreshTokenInterceptor(
-      storage,
-      // Se pasa una instancia básica de Dio para evitar dependencia circular
-      ref.watch(mockApiServiceProvider) as dynamic,
-    ),
+    refreshTokenInterceptor: RefreshTokenInterceptor(storage, basicDio),
   );
 });

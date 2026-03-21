@@ -7,7 +7,7 @@ import '../../../../core/di/providers.dart';
 // ========== Repository Provider ==========
 
 final cameraRepositoryProvider = Provider<CameraRepository>((ref) {
-  return CameraRepositoryImpl(ref.watch(mockApiServiceProvider));
+  return CameraRepositoryImpl(ref.watch(dioClientProvider));
 });
 
 // ========== Cameras List Provider ==========

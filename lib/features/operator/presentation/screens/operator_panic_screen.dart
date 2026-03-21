@@ -2,17 +2,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 
-/// Pantalla de Pánico — compartida entre Operador y Administrador
-/// Alto contraste con theme GuardIA, hold 3s para activar, cancelación 5s
-class PanicScreen extends StatefulWidget {
-  const PanicScreen({super.key});
+/// Pantalla de Pánico del Operador — alto contraste con theme GuardIA
+class OperatorPanicScreen extends StatefulWidget {
+  const OperatorPanicScreen({super.key});
 
   @override
-  State<PanicScreen> createState() => _PanicScreenState();
+  State<OperatorPanicScreen> createState() => _OperatorPanicScreenState();
 }
 
-class _PanicScreenState extends State<PanicScreen>
+class _OperatorPanicScreenState extends State<OperatorPanicScreen>
     with SingleTickerProviderStateMixin {
   bool _holding = false;
   bool _sent = false;
@@ -70,14 +70,9 @@ class _PanicScreenState extends State<PanicScreen>
         _cancelCountdown--;
         if (_cancelCountdown <= 0) {
           timer.cancel();
+          // Navigate to emergency active
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('¡ALERTA DE PÁNICO ENVIADA!'),
-                backgroundColor: Colors.red,
-                duration: Duration(seconds: 3),
-              ),
-            );
+            context.pushReplacement('/operator-emergency-active');
           }
         }
       });
@@ -175,7 +170,7 @@ class _PanicScreenState extends State<PanicScreen>
           child: AnimatedBuilder(
             animation: _pulseCtrl,
             builder: (context, child) {
-              return SizedBox(
+              return Container(
                 width: 220 + (_pulseCtrl.value * 8),
                 height: 220 + (_pulseCtrl.value * 8),
                 child: Stack(
@@ -274,7 +269,7 @@ class _PanicScreenState extends State<PanicScreen>
           ),
         ),
         const SizedBox(height: 32),
-        const Text(
+        Text(
           '¡ALERTA ENVIADA!',
           style: TextStyle(
             color: Colors.white,

@@ -24,6 +24,7 @@ final authGuardProvider = Provider<AuthGuard>((ref) {
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return FirebaseAuthRepository(
     ref.watch(secureStorageServiceProvider),
+    ref.watch(dioClientProvider),
   );
 });
 

@@ -64,7 +64,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               title: const Text('Ajustes',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Colors.white,
+                ),
               ),
               background: Container(
                 decoration: BoxDecoration(

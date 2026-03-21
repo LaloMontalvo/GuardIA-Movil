@@ -7,7 +7,7 @@ import '../../../../core/di/providers.dart';
 // ========== Repository Provider ==========
 
 final alertRepositoryProvider = Provider<AlertRepository>((ref) {
-  return AlertRepositoryImpl(ref.watch(mockApiServiceProvider));
+  return AlertRepositoryImpl(ref.watch(dioClientProvider));
 });
 
 // ========== Alerts List Provider ==========
