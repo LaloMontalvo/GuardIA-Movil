@@ -13,6 +13,7 @@ import '../features/auth/presentation/screens/onboarding_screen.dart';
 import '../features/auth/presentation/screens/permissions_screen.dart';
 import '../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../features/auth/presentation/screens/otp_verification_screen.dart';
+import '../features/auth/presentation/screens/two_factor_auth_screen.dart';
 import '../features/auth/presentation/screens/zone_selection_screen.dart';
 import '../features/auth/presentation/screens/welcome_screen.dart';
 import '../features/auth/presentation/screens/maintenance_screen.dart';
@@ -60,7 +61,7 @@ import '../features/help/presentation/screens/about_screen.dart';
 // Operator (Vecino)
 import '../features/operator/presentation/screens/operator_shell.dart';
 import '../features/operator/presentation/screens/operator_home_screen.dart';
-import '../features/operator/presentation/screens/operator_create_report_screen.dart';
+import '../features/reports/presentation/screens/create_report_screen.dart';
 import '../features/operator/presentation/screens/operator_report_confirmation_screen.dart';
 import '../features/operator/presentation/screens/operator_report_history_screen.dart';
 import '../features/operator/presentation/screens/operator_report_detail_screen.dart';
@@ -105,6 +106,7 @@ const _publicRoutes = [
   '/permissions',
   '/forgot-password',
   '/verify-otp',
+  '/two-factor',
   '/zone-selection',
   '/welcome',
   '/maintenance',
@@ -115,8 +117,7 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Provider del router con protección anti-spoofing
 final routerProvider = Provider<GoRouter>((ref) {
-  final guard = ref.watch(authGuardProvider);
-  final authState = ref.watch(authStateProvider);
+  final guard = ref.read(authGuardProvider);
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
@@ -124,6 +125,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     refreshListenable: guard,
     redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
       final loc = state.matchedLocation;
       final isPublicRoute = _publicRoutes.contains(loc);
 
@@ -143,10 +145,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      // --- Caso 3: Ya autenticado con perfil válido en /login ---
+      // --- Caso 2.5: Autenticado, perfil válido, pero 2FA pendiente ---
+      if (guard.isLoggedIn &&
+          guard.initialCheckDone &&
+          guard.isProfileValid &&
+          !guard.is2faVerified &&
+          loc != '/two-factor') {
+        return '/two-factor';
+      }
+
+      // --- Caso 3: Ya autenticado con perfil válido y 2FA completado ---
       if (guard.isLoggedIn &&
           guard.isProfileValid &&
-          loc == '/login') {
+          guard.is2faVerified &&
+          (loc == '/login' || loc == '/two-factor')) {
         final user = authState.user;
         if (user != null && user.isOperator) {
             return '/operator-home';
@@ -170,11 +182,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
       }
 
-      // Fallback: también verificar el estado Riverpod por compatibilidad
-      if (!authState.isAuthenticated && !isPublicRoute) {
-        return '/login';
-      }
-
+      // (Eliminado el fallback de authState.isAuthenticated porque entra en conflicto con AuthGuard durante el estado inicial).
+      
       return null;
     },
     routes: [
@@ -188,6 +197,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/permissions', pageBuilder: (context, state) => _buildAnimatedPage(const PermissionsScreen(), state)),
       GoRoute(path: '/forgot-password', pageBuilder: (context, state) => _buildAnimatedPage(const ForgotPasswordScreen(), state)),
       GoRoute(path: '/verify-otp', pageBuilder: (context, state) => _buildAnimatedPage(const OtpVerificationScreen(), state)),
+      GoRoute(path: '/two-factor', pageBuilder: (context, state) => _buildAnimatedPage(const TwoFactorAuthScreen(), state)),
       GoRoute(path: '/zone-selection', pageBuilder: (context, state) => _buildAnimatedPage(const ZoneSelectionScreen(), state)),
       GoRoute(path: '/welcome', pageBuilder: (context, state) => _buildAnimatedPage(const WelcomeScreen(), state)),
       GoRoute(path: '/maintenance', pageBuilder: (context, state) => _buildAnimatedPage(const MaintenanceScreen(), state)),
@@ -247,6 +257,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => _buildAnimatedPage(
           ReportConfirmationScreen(folio: state.pathParameters['folio'] ?? 'N/A'), state),
       ),
+      GoRoute(path: '/create-report', pageBuilder: (context, state) => _buildAnimatedPage(const CreateReportScreen(), state)),
 
       // Settings & Profile
       GoRoute(path: '/settings', pageBuilder: (context, state) => _buildAnimatedPage(const SettingsScreen(), state)),
@@ -265,7 +276,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) => OperatorShell(child: child),
         routes: [
           GoRoute(path: '/operator-home', builder: (context, state) => const OperatorHomeScreen()),
-          GoRoute(path: '/operator-report', builder: (context, state) => const OperatorCreateReportScreen()),
+          GoRoute(path: '/operator-report', builder: (context, state) => const CreateReportScreen()),
           GoRoute(path: '/operator-notifications', builder: (context, state) => const OperatorNotificationsScreen()),
           GoRoute(path: '/operator-camera', builder: (context, state) => const OperatorMyCameraScreen()),
           GoRoute(path: '/operator-settings', builder: (context, state) => const OperatorSettingsScreen()),

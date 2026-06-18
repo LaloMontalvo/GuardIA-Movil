@@ -67,6 +67,9 @@ class _OperatorNotificationsScreenState extends State<OperatorNotificationsScree
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notificaciones', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: isDark ? const Color(0xFF1A1A3E) : AppColors.primaryBlue,
+        foregroundColor: Colors.white,
+        elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
           if (unreadCount > 0)

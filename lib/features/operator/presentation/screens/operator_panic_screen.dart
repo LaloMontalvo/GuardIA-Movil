@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../alerts/presentation/providers/alert_providers.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 
 /// Pantalla de Pánico del Operador — alto contraste con theme GuardIA
-class OperatorPanicScreen extends StatefulWidget {
+class OperatorPanicScreen extends ConsumerStatefulWidget {
   const OperatorPanicScreen({super.key});
 
   @override
-  State<OperatorPanicScreen> createState() => _OperatorPanicScreenState();
+  ConsumerState<OperatorPanicScreen> createState() => _OperatorPanicScreenState();
 }
 
-class _OperatorPanicScreenState extends State<OperatorPanicScreen>
+class _OperatorPanicScreenState extends ConsumerState<OperatorPanicScreen>
     with SingleTickerProviderStateMixin {
   bool _holding = false;
   bool _sent = false;
@@ -59,11 +61,17 @@ class _OperatorPanicScreenState extends State<OperatorPanicScreen>
     }
   }
 
-  void _sendPanic() {
+  void _sendPanic() async {
     setState(() {
       _sent = true;
       _cancelCountdown = 5;
     });
+
+    try {
+      await ref.read(alertRepositoryProvider).sendPanic();
+    } catch (e) {
+      debugPrint('Error enviando pánico: $e');
+    }
 
     _cancelTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {

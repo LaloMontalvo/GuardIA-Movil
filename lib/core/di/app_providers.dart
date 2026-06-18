@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import '../services/local_storage_service.dart';
 
 /// Provider del servicio de almacenamiento local
@@ -84,3 +85,58 @@ final largeTextProvider = StateProvider<bool>((ref) => false);
 
 /// Provider alto contraste (accesibilidad)
 final highContrastProvider = StateProvider<bool>((ref) => false);
+
+/// Provider de la URL base del backend de IA (persiste en SharedPreferences)
+final iaBaseUrlProvider = StateNotifierProvider<IaBaseUrlNotifier, String>((ref) {
+  return IaBaseUrlNotifier(ref.watch(localStorageProvider));
+});
+
+class IaBaseUrlNotifier extends StateNotifier<String> {
+  final LocalStorageService _storage;
+
+  IaBaseUrlNotifier(this._storage) : super('') {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await _storage.getBackendBaseUrl();
+  }
+
+  Future<void> setUrl(String url) async {
+    state = url;
+    await _storage.setBackendBaseUrl(url);
+  }
+}
+
+/// Provider del ID de la cámara de IA (persiste en SharedPreferences)
+final iaCameraIdProvider = StateNotifierProvider<IaCameraIdNotifier, String>((ref) {
+  return IaCameraIdNotifier(ref.watch(localStorageProvider));
+});
+
+class IaCameraIdNotifier extends StateNotifier<String> {
+  final LocalStorageService _storage;
+
+  IaCameraIdNotifier(this._storage) : super('cam-phone') {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await _storage.getBackendCameraId();
+  }
+
+  Future<void> setCameraId(String cameraId) async {
+    state = cameraId;
+    await _storage.setBackendCameraId(cameraId);
+  }
+}
+
+/// Provider de Dio dedicado para comunicación con el servidor IA local
+final iaDioProvider = Provider<Dio?>((ref) {
+  final baseUrl = ref.watch(iaBaseUrlProvider);
+  if (baseUrl.isEmpty) return null;
+  return Dio(BaseOptions(
+    baseUrl: baseUrl,
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+  ));
+});

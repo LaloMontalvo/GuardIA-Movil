@@ -9,7 +9,7 @@ import '../../../../app/auth/auth_guard.dart';
 // ========== Session Service (anti-spoofing) ==========
 
 final sessionServiceProvider = Provider<SessionService>((ref) {
-  return SessionService();
+  return SessionService(storageService: ref.watch(secureStorageServiceProvider));
 });
 
 // ========== Auth Guard (router refreshListenable) ==========
@@ -102,7 +102,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = await _authRepository.getCurrentUser();
       state = AuthState(user: user, isLoading: false);
 
-      // 3. Marcar perfil válido en el guard
+      // 3. Validar perfil y publicarlo en el guard
+      await _authGuard.validateProfile();
       _authGuard.markInitialCheckDone();
     } catch (e) {
       state = AuthState(

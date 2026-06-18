@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/di/app_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Ajustes — compartido entre Operador y Administrador
@@ -64,31 +66,16 @@ class _OperatorSettingsScreenState extends ConsumerState<OperatorSettingsScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 120,
-            pinned: true,
-            automaticallyImplyLeading: false,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text('Ajustes',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
-                    colors: isDark
-                        ? [const Color(0xFF1A1A3E), const Color(0xFF0F0F1F)]
-                        : [Colors.white, Colors.grey.shade50],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
+      appBar: AppBar(
+        title: const Text('Ajustes', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: isDark ? const Color(0xFF1A1A3E) : AppColors.primaryBlue,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
                 // Perfil
                 _animatedSection(0, _buildProfileCard(user, theme, isDark)),
                 const SizedBox(height: 20),
@@ -207,6 +194,28 @@ class _OperatorSettingsScreenState extends ConsumerState<OperatorSettingsScreen>
                 )),
                 const SizedBox(height: 20),
 
+                // Servidor IA
+                _animatedSection(5, _buildSection(
+                  theme, isDark, 'Servidor IA', Icons.memory_rounded, Colors.cyan,
+                  [
+                    _SettingsTile(
+                      icon: Icons.dns_rounded,
+                      title: 'Dirección IP del servidor',
+                      subtitle: ref.watch(iaBaseUrlProvider).isEmpty
+                          ? 'No configurado — toca para configurar'
+                          : ref.watch(iaBaseUrlProvider),
+                      onTap: () => _showIaServerDialog(context, ref),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.videocam_rounded,
+                      title: 'ID de la Cámara',
+                      subtitle: ref.watch(iaCameraIdProvider),
+                      onTap: () => _showIaCameraIdDialog(context, ref),
+                    ),
+                  ],
+                )),
+                const SizedBox(height: 20),
+
                 // Soporte
                 _animatedSection(5, _buildSection(
                   theme, isDark, 'Soporte', Icons.help_outline_rounded, AppColors.primaryBlue,
@@ -260,9 +269,6 @@ class _OperatorSettingsScreenState extends ConsumerState<OperatorSettingsScreen>
                       style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
                 ),
                 const SizedBox(height: 80),
-              ]),
-            ),
-          ),
         ],
       ),
     );
@@ -364,6 +370,187 @@ class _OperatorSettingsScreenState extends ConsumerState<OperatorSettingsScreen>
             ),
           ),
           ...children,
+        ],
+      ),
+    );
+  }
+
+  void _showIaServerDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController(
+      text: ref.read(iaBaseUrlProvider),
+    );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.dns_rounded, color: isDark ? Colors.white : AppColors.primaryBlue),
+            const SizedBox(width: 10),
+            const Flexible(child: Text('Servidor IA', overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Ingresa la IP local de tu computadora donde corre la IA.',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Ejemplo: http://192.168.1.15:8000',
+              style: TextStyle(fontSize: 12, color: Colors.cyan, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: controller,
+              keyboardType: TextInputType.url,
+              decoration: InputDecoration(
+                labelText: 'URL del servidor',
+                hintText: 'http://192.168.1.X:8000',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.link_rounded),
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final url = controller.text.trim();
+              if (url.isEmpty) {
+                ref.read(iaBaseUrlProvider.notifier).setUrl('');
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('URL del servidor eliminada')),
+                );
+                return;
+              }
+              try {
+                final dio = Dio();
+                final response = await dio.get('$url/health',
+                    options: Options(receiveTimeout: const Duration(seconds: 5)));
+                if (response.statusCode == 200) {
+                  ref.read(iaBaseUrlProvider.notifier).setUrl(url);
+                  Navigator.pop(ctx);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('\u2705 Conectado al servidor IA'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('\u274c No se pudo conectar a $url'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text('Verificar y guardar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showIaCameraIdDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController(
+      text: ref.read(iaCameraIdProvider),
+    );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.videocam_rounded, color: isDark ? Colors.white : AppColors.primaryBlue),
+            const SizedBox(width: 10),
+            const Flexible(child: Text('ID de Cámara', overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Identificador único para este celular en el panel de monitoreo.',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Ejemplo: cam-phone-lalo, cam-phone-caseta2',
+              style: TextStyle(fontSize: 12, color: Colors.cyan, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: 'ID de Cámara',
+                hintText: 'cam-phone-operator',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.fingerprint_rounded),
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final id = controller.text.trim();
+              if (id.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('El ID no puede estar vacío'), backgroundColor: Colors.red),
+                );
+                return;
+              }
+              await ref.read(iaCameraIdProvider.notifier).setCameraId(id);
+              if (context.mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('ID de cámara cambiado a $id'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text('Guardar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
         ],
       ),
     );

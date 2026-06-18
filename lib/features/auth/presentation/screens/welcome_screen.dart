@@ -172,10 +172,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.celebration_rounded,
-                              size: 60,
-                              color: Colors.white,
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/GuardIA.png',
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),

@@ -79,7 +79,7 @@ class MyReportsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => context.push('/create-incident'),
+            onPressed: () => context.push('/create-report'),
             tooltip: 'Nuevo reporte',
           ),
         ],
@@ -94,7 +94,7 @@ class MyReportsScreen extends StatelessWidget {
                   const Text('No tienes reportes'),
                   const SizedBox(height: 8),
                   FilledButton.icon(
-                    onPressed: () => context.push('/create-incident'),
+                    onPressed: () => context.push('/create-report'),
                     icon: const Icon(Icons.add),
                     label: const Text('Crear reporte'),
                   ),

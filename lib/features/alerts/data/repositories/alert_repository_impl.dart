@@ -43,17 +43,49 @@ class AlertRepositoryImpl implements AlertRepository {
     return alerts.where((alert) => alert.status.name == status).toList();
   }
 
+  @override
+  Future<void> createReport({
+    required String type,
+    required String priority,
+    required String description,
+    required String locationJson,
+    required String createdByUserId,
+    required String role,
+    required String status,
+  }) async {
+    // Normalizar prioridad por si acaso, aunque la UI debería mandar 'baja', 'media' o 'alta'
+    String mappedPriority = priority.toLowerCase().replaceAll('í', 'i');
+    if (mappedPriority == 'critica' || mappedPriority == 'urgente') {
+      mappedPriority = 'alta'; 
+    }
+
+    await _dioClient.post(ApiConstants.reports, data: {
+      'created_by_user_id': createdByUserId,
+      'role': role,
+      'type': type,
+      'priority': mappedPriority,
+      'description': description.trim(),
+      'status': status,
+      'ubicacion': locationJson,
+    });
+  }
+
+  @override
+  Future<void> sendPanic() async {
+    await _dioClient.post(ApiConstants.panic);
+  }
+
   Alert _alertFromJson(Map<String, dynamic> json) {
     return Alert(
-      id: json['id'] as String,
-      type: AlertType.fromString(json['type'] as String),
-      priority: Priority.fromString(json['priority'] as String),
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      cameraId: json['cameraId'] as String,
-      cameraName: json['cameraName'] as String?,
-      thumbnailUrl: json['thumbnailUrl'] as String?,
-      status: AlertStatus.fromString(json['status'] as String),
-      note: json['note'] as String?,
+      id: json['id']?.toString() ?? '',
+      type: AlertType.fromString(json['type']?.toString() ?? ''),
+      priority: Priority.fromString(json['priority']?.toString() ?? ''),
+      timestamp: json['timestamp'] != null ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now() : DateTime.now(),
+      cameraId: json['cameraId']?.toString(),
+      cameraName: json['cameraName']?.toString(),
+      thumbnailUrl: json['thumbnailUrl']?.toString(),
+      status: AlertStatus.fromString(json['status']?.toString() ?? ''),
+      note: json['note']?.toString(),
     );
   }
 }

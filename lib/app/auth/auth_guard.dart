@@ -14,12 +14,14 @@ class AuthGuard extends ChangeNotifier {
 
   bool _isLoggedIn = false;
   bool _isProfileValid = false;
+  bool _is2faVerified = false;
   bool _initialCheckDone = false;
 
   AuthGuard(this._sessionService) {
     // Estado inicial
     _isLoggedIn = _sessionService.isLoggedIn;
     _isProfileValid = _sessionService.isProfileValid;
+    _is2faVerified = _sessionService.is2faVerified;
 
     // Escuchar cambios de auth
     _subscription = _sessionService.authStateChanges.listen(_onAuthStateChanged);
@@ -27,6 +29,7 @@ class AuthGuard extends ChangeNotifier {
 
   bool get isLoggedIn => _isLoggedIn;
   bool get isProfileValid => _isProfileValid;
+  bool get is2faVerified => _is2faVerified;
   bool get initialCheckDone => _initialCheckDone;
   String? get redirectReason => _sessionService.redirectReason;
 
@@ -58,6 +61,14 @@ class AuthGuard extends ChangeNotifier {
     await _sessionService.signOut();
     _isLoggedIn = false;
     _isProfileValid = false;
+    _is2faVerified = false;
+    notifyListeners();
+  }
+
+  /// Marca 2FA como exitoso
+  void verify2fa() {
+    _sessionService.verify2fa();
+    _syncFromService();
     notifyListeners();
   }
 
@@ -67,6 +78,7 @@ class AuthGuard extends ChangeNotifier {
 
     if (!_isLoggedIn) {
       _isProfileValid = false;
+      _is2faVerified = false;
     }
 
     // Solo notificar si hubo cambio real
@@ -79,6 +91,7 @@ class AuthGuard extends ChangeNotifier {
   void _syncFromService() {
     _isLoggedIn = _sessionService.isLoggedIn;
     _isProfileValid = _sessionService.isProfileValid;
+    _is2faVerified = _sessionService.is2faVerified;
   }
 
   @override

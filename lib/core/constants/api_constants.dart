@@ -32,6 +32,9 @@ class ApiConstants {
   static const String recordings = '/recordings';
   static String recordingDetail(String id) => '/recordings/$id';
 
+  // Endpoints - Reports
+  static const String reports = '/reports';
+
   // Endpoints - Panic
   static const String panic = '/panic';
 

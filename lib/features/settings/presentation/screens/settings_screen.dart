@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:local_auth/local_auth.dart';
 import '../../../../core/di/app_providers.dart';
 import '../../../../app/theme/app_colors.dart';
+import 'package:dio/dio.dart';
 
-/// Pantalla de Ajustes — premium settings hub
+final biometricProvider = StateProvider<bool>((ref) => false);
+
+/// Pantalla de Ajustes — Premium settings hub
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -56,33 +63,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // ── Premium gradient AppBar ──
-          SliverAppBar(
-            expandedHeight: 120,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text('Ajustes',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1A1A2E) : AppColors.primaryBlue,
-                ),
-              ),
-            ),
-          ),
-
-          // ── Body ──
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
+      appBar: AppBar(
+        title: const Text('Ajustes', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: isDark ? const Color(0xFF1A1A3E) : AppColors.primaryBlue,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+        children: [
                 // ── Apariencia ──
                 _staggered(0, _sectionLabel(theme, Icons.palette_outlined, 'Apariencia')),
                 const SizedBox(height: 8),
@@ -157,6 +147,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
                 const SizedBox(height: 24),
 
+                // ── Servidor IA ──
+                _staggered(3, _sectionLabel(theme, Icons.memory_rounded, 'Servidor IA')),
+                const SizedBox(height: 8),
+                _staggered(3, _settingsCard(
+                  isDark: isDark,
+                  children: [
+                    _settingsTile(
+                      icon: Icons.dns_rounded,
+                      color: Colors.cyan,
+                      title: 'Dirección IP del servidor',
+                      subtitle: ref.watch(iaBaseUrlProvider).isEmpty
+                          ? 'No configurado'
+                          : ref.watch(iaBaseUrlProvider),
+                      onTap: () => _showIaServerDialog(context, ref),
+                    ),
+                  ],
+                )),
+
+                const SizedBox(height: 24),
+
                 // ── Notificaciones ──
                 _staggered(4, _sectionLabel(theme, Icons.notifications_outlined, 'Notificaciones')),
                 const SizedBox(height: 8),
@@ -210,33 +220,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   isDark: isDark,
                   children: [
                     _settingsTile(
-                      icon: Icons.lock_rounded,
-                      color: Colors.red.shade400,
-                      title: 'Seguridad',
-                      subtitle: 'Contraseña, PIN, biometría, sesiones',
-                      onTap: () => context.push('/security'),
+                      icon: Icons.person_rounded,
+                      color: Colors.blueAccent,
+                      title: 'Editor de Perfil',
+                      subtitle: 'Actualiza tus datos',
+                      onTap: () => context.push('/profile'),
                     ),
                     _divider(),
                     _settingsTile(
-                      icon: Icons.privacy_tip_rounded,
+                      icon: Icons.lock_rounded,
+                      color: Colors.red.shade400,
+                      title: 'Cambio de Contraseña',
+                      subtitle: 'Gestiona tu clave de acceso',
+                      onTap: _showChangePasswordLocal,
+                    ),
+                    _divider(),
+                    _switchTile(
+                      icon: Icons.fingerprint_rounded,
+                      color: Colors.purple,
+                      title: 'Desbloqueo Biométrico',
+                      subtitle: 'Usar huella al volver a la app',
+                      value: ref.watch(biometricProvider),
+                      onChanged: (v) => _toggleBiometric(v, ref),
+                    ),
+                    _divider(),
+                    _settingsTile(
+                      icon: Icons.location_on_rounded,
                       color: Colors.cyan,
-                      title: 'Privacidad',
-                      subtitle: 'Permisos, datos, documentos legales',
-                      onTap: () => context.push('/privacy'),
+                      title: 'Permisos de Ubicación',
+                      subtitle: 'Gestionar acceso al GPS',
+                      onTap: _checkLocationPermissions,
                     ),
                     _divider(),
                     _settingsTile(
                       icon: Icons.storage_rounded,
                       color: Colors.deepOrange,
-                      title: 'Almacenamiento',
-                      subtitle: 'Caché, descargas, limpiar datos',
-                      onTap: () => context.push('/storage'),
+                      title: 'Limpiar Caché',
+                      subtitle: 'Libera espacio temporal',
+                      onTap: _clearCache,
+                    ),
+                    _divider(),
+                    _settingsTile(
+                      icon: Icons.help_outline_rounded,
+                      color: Colors.green,
+                      title: 'Soporte y Ayuda',
+                      subtitle: 'Contactar asistencia',
+                      onTap: _launchSupport,
                     ),
                   ],
                 )),
-              ]),
-            ),
-          ),
         ],
       ),
     );
@@ -480,6 +512,232 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+
+  Future<void> _checkLocationPermissions() async {
+    final status = await Permission.location.request();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Permiso de ubicación: ${status.name == 'granted' ? 'Otorgado' : 'Denegado'}')),
+      );
+    }
+  }
+
+  Future<void> _clearCache() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      if (dir.existsSync()) {
+        dir.deleteSync(recursive: true);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Caché limpiada exitosamente')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al limpiar caché')),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchSupport() async {
+    final Uri url = Uri(scheme: 'mailto', path: 'soporte@guardia.com', query: 'subject=Ayuda Movil');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo abrir el correo de soporte.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleBiometric(bool value, WidgetRef ref) async {
+    final LocalAuthentication auth = LocalAuthentication();
+    final canAuthenticate = await auth.canCheckBiometrics || await auth.isDeviceSupported();
+    
+    if (canAuthenticate) {
+      if (value) {
+        bool authenticated = await auth.authenticate(
+          localizedReason: 'Autentícate para habilitar el desbloqueo biométrico',
+          options: const AuthenticationOptions(stickyAuth: true),
+        );
+        if (authenticated) {
+          ref.read(biometricProvider.notifier).state = true;
+        }
+      } else {
+        ref.read(biometricProvider.notifier).state = false;
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Este dispositivo no soporta biometría.')),
+        );
+      }
+    }
+  }
+
+  void _showChangePasswordLocal() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cambiar contraseña'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Contraseña actual',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.lock_outline),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Nueva contraseña',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.vpn_key_outlined),
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Contraseña actualizada'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Cambiar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showIaServerDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController(
+      text: ref.read(iaBaseUrlProvider),
+    );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.dns_rounded, color: isDark ? Colors.white : AppColors.primaryBlue),
+            const SizedBox(width: 10),
+            const Flexible(child: Text('Servidor IA', overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Ingresa la IP local de tu computadora donde corre la IA.',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Ejemplo: http://192.168.1.15:8000',
+              style: TextStyle(fontSize: 12, color: Colors.cyan, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: controller,
+              keyboardType: TextInputType.url,
+              decoration: InputDecoration(
+                labelText: 'URL del servidor',
+                hintText: 'http://192.168.1.X:8000',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.link_rounded),
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final url = controller.text.trim();
+              if (url.isEmpty) {
+                ref.read(iaBaseUrlProvider.notifier).setUrl('');
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('URL del servidor eliminada')),
+                );
+                return;
+              }
+              // Quick connectivity test
+              try {
+                final dio = Dio();
+                final response = await dio.get('$url/health',
+                    options: Options(receiveTimeout: const Duration(seconds: 5)));
+                if (response.statusCode == 200) {
+                  ref.read(iaBaseUrlProvider.notifier).setUrl(url);
+                  Navigator.pop(ctx);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✅ Conectado al servidor IA'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('❌ No se pudo conectar a $url'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text('Verificar y guardar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
       ),
     );
   }

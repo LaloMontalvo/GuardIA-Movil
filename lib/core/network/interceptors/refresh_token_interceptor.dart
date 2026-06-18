@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../storage/secure_storage_service.dart';
 import '../../constants/api_constants.dart';
-
 /// Interceptor que detecta 401 y renueva el token automáticamente
 class RefreshTokenInterceptor extends Interceptor {
   final SecureStorageService _storageService;
@@ -14,29 +14,16 @@ class RefreshTokenInterceptor extends Interceptor {
     // Si es 401 (no autorizado)
     if (err.response?.statusCode == 401) {
       try {
-        // Intentar renovar token
-        final refreshToken = await _storageService.getRefreshToken();
+        // Intentar renovar token usando Firebase directamente
+        final currentUser = FirebaseAuth.instance.currentUser;
 
-        if (refreshToken != null && refreshToken.isNotEmpty) {
-          // Llamar al endpoint de refresh
-          final response = await _dio.post(
-            ApiConstants.refreshToken,
-            data: {'refreshToken': refreshToken},
-            options: Options(
-              headers: {
-                // No enviar el access token expirado
-                ApiConstants.authHeader: null,
-              },
-            ),
-          );
+        if (currentUser != null) {
+          // Forzar la obtención de un nuevo token de Firebase
+          final newAccessToken = await currentUser.getIdToken(true);
 
-          if (response.statusCode == 200) {
-            final newAccessToken = response.data['accessToken'];
-            final newRefreshToken = response.data['refreshToken'];
-
-            // Guardar nuevos tokens
+          if (newAccessToken != null) {
+            // Guardar el nuevo token
             await _storageService.saveAccessToken(newAccessToken);
-            await _storageService.saveRefreshToken(newRefreshToken);
 
             // Reintentar el request original con el nuevo token
             final originalRequest = err.requestOptions;
@@ -57,8 +44,9 @@ class RefreshTokenInterceptor extends Interceptor {
           }
         }
       } catch (e) {
-        // Si falla el refresh, limpiar tokens y dejar que el error continúe
+        // Si falla el refresh, limpiar tokens y sesión
         await _storageService.deleteTokens();
+        await FirebaseAuth.instance.signOut();
       }
     }
 

@@ -40,3 +40,9 @@ app.*.map.json
 # Generated files
 *.g.dart
 *.freezed.dart
+
+# Local YOLO weight files
+yolov8n.pt
+
+# Temporary/Admin workspace
+temp_admin/

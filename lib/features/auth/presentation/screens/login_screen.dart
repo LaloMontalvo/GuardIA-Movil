@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dio/dio.dart';
 import '../providers/auth_providers.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/app_alerts.dart';
@@ -117,11 +120,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       _failedAttempts = 0;
       _lockoutUntil = null;
       _lockoutTimer?.cancel();
-
-      if (mounted) {
-        context.go('/welcome');
-      }
+      
+      // La redirección a '/two-factor' ocurrirá automáticamente a través de GoRouter
+      // cuando detecte el cambio de estado de autenticación de Firebase.
     } catch (e) {
+      if (mounted) {
+        // En caso de que se necesite limpiar un estado de carga general en el futuro
+      }
+      
       // Incrementar intentos fallidos
       _failedAttempts++;
 
@@ -138,7 +144,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         final errorMsg = e.toString().replaceAll('Exception: ', '');
 
         // Detectar tipo de error para mostrar alerta adecuada
-        if (errorMsg.contains('no autorizado') || errorMsg.contains('perfil no existe')) {
+        if (errorMsg.contains('invalid-email')) {
+          AppAlerts.showSnackBar(
+            context,
+            title: 'Correo inválido',
+            message: 'El formato del correo electrónico provisto no es válido.',
+            type: AlertType.error,
+          );
+        } else if (errorMsg.contains('no autorizado') || errorMsg.contains('perfil no existe')) {
           // Perfil Firestore no encontrado → Dialog
           AppAlerts.showAlertDialog(
             context,
@@ -147,54 +160,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             type: AlertType.warning,
             confirmText: 'Entendido',
           );
-        } else if (errorMsg.contains('No existe una cuenta') || errorMsg.contains('user-not-found')) {
+        } else if (errorMsg.contains('user-not-found') || errorMsg.contains('No existe una cuenta')) {
           // Cuenta Firebase no existe → Dialog
           AppAlerts.showAlertDialog(
             context,
             title: 'Cuenta no encontrada',
-            message: 'No existe una cuenta registrada con este correo electrónico. Verifica que el correo sea correcto o contacta al administrador.',
+            message: 'No existe una cuenta registrada con este correo electrónico. Verifica que el correo sea correcto.',
             type: AlertType.error,
             confirmText: 'Reintentar',
           );
         } else if (_isLockedOut) {
-          // Bloqueo por intentos → Warning dialog
+          // Bloqueo local por intentos → Warning dialog
           AppAlerts.showAlertDialog(
             context,
             title: 'Demasiados intentos',
-            message: 'Has excedido el límite de intentos. Por seguridad, espera $_lockoutSecondsLeft segundos antes de intentar de nuevo.',
+            message: 'Has excedido el límite de intentos permitidos. Por seguridad, espera $_lockoutSecondsLeft segundos antes de intentar.',
             type: AlertType.warning,
             confirmText: 'Entendido',
           );
-        } else if (errorMsg.contains('Contraseña') || errorMsg.contains('incorrecta') || errorMsg.contains('inválida') || errorMsg.contains('Credenciales')) {
+        } else if (errorMsg.contains('wrong-password') || errorMsg.contains('invalid-credential') || errorMsg.contains('Contraseña')) {
           // Contraseña incorrecta → SnackBar premium
           AppAlerts.showSnackBar(
             context,
             title: 'Credenciales incorrectas',
-            message: errorMsg,
+            message: 'La contraseña o el correo ingresados son incorrectos. Verifícalos.',
             type: AlertType.error,
           );
-        } else if (errorMsg.contains('Cuenta') && (errorMsg.contains('Inactiva') || errorMsg.contains('Bloqueada') || errorMsg.contains('deshabilitada'))) {
-          // Cuenta bloqueada/inactiva → Dialog
+        } else if (errorMsg.contains('user-disabled') || (errorMsg.contains('Cuenta') && errorMsg.contains('Inactiva'))) {
+          // Cuenta bloqueada/inactiva de Firebase → Dialog
           AppAlerts.showAlertDialog(
             context,
             title: 'Cuenta suspendida',
-            message: '$errorMsg\n\nContacta al administrador para reactivar tu acceso.',
+            message: 'Esta cuenta ha sido deshabilitada.\n\nContacta al administrador para reactivar tu acceso.',
             type: AlertType.warning,
             confirmText: 'Entendido',
           );
-        } else if (errorMsg.contains('verificar perfil') || errorMsg.contains('Error al')) {
+        } else if (errorMsg.contains('network-request-failed') || errorMsg.contains('verificar perfil')) {
           // Error de red/Firestore → SnackBar
           AppAlerts.showSnackBar(
             context,
             title: 'Error de conexión',
-            message: 'No se pudo verificar tu perfil. Revisa tu conexión a internet e intenta de nuevo.',
+            message: 'Ocurrió un error al contactar al servidor. Revisa tu conexión a internet e intenta de nuevo.',
             type: AlertType.warning,
           );
         } else {
           // Error genérico → SnackBar
           AppAlerts.showSnackBar(
             context,
-            title: 'Error de inicio de sesión',
+            title: 'Error inesperado',
             message: errorMsg,
             type: AlertType.error,
           );
@@ -499,6 +512,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           );
         },
       ),
+      // Overlay de carga general (opcional, extra feedback)
+      bottomNavigationBar: null, // kept for structure integrity, standard scaffold
     );
   }
 }

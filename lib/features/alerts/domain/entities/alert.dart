@@ -8,7 +8,7 @@ class Alert {
   final AlertType type;
   final Priority priority;
   final DateTime timestamp;
-  final String cameraId;
+  final String? cameraId;
   final String? cameraName;
   final String? thumbnailUrl;
   final AlertStatus status;
@@ -19,7 +19,7 @@ class Alert {
     required this.type,
     required this.priority,
     required this.timestamp,
-    required this.cameraId,
+    this.cameraId,
     this.cameraName,
     this.thumbnailUrl,
     required this.status,

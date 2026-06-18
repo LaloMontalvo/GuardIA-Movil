@@ -56,6 +56,11 @@ dependencies:
   firebase_core: ^4.4.0
   firebase_auth: ^6.1.4
   cloud_firestore: ^6.1.2
+  local_auth: ^2.3.0
+  cloud_functions: ^6.0.7
+  lucide_icons_flutter: ^3.1.10
+  video_player: ^2.8.1
+  camera: ^0.11.0+2
 
 dev_dependencies:
   flutter_test:
@@ -86,3 +91,4 @@ flutter:
   
   assets:
     - assets/GuardIA.png
+    - assets/videos/

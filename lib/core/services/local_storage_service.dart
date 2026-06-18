@@ -21,6 +21,8 @@ class LocalStorageService {
   static const _keySelectedZone = 'selected_zone';
   static const _keyWelcomeSeen = 'welcome_seen';
   static const _keyPermissionsRequested = 'permissions_requested';
+  static const _keyBackendBaseUrl = 'backend_base_url';
+  static const _keyBackendCameraId = 'backend_camera_id';
 
   SharedPreferences? _prefs;
 
@@ -105,4 +107,12 @@ class LocalStorageService {
   // ========== PERMISOS ==========
   Future<bool> hasRequestedPermissions() async => (await prefs).getBool(_keyPermissionsRequested) ?? false;
   Future<void> setPermissionsRequested(bool value) async => (await prefs).setBool(_keyPermissionsRequested, value);
+
+  // ========== BACKEND IA URL ==========
+  Future<String> getBackendBaseUrl() async => (await prefs).getString(_keyBackendBaseUrl) ?? '';
+  Future<void> setBackendBaseUrl(String url) async => (await prefs).setString(_keyBackendBaseUrl, url);
+
+  // ========== BACKEND IA CAMERA ID ==========
+  Future<String> getBackendCameraId() async => (await prefs).getString(_keyBackendCameraId) ?? 'cam-phone';
+  Future<void> setBackendCameraId(String cameraId) async => (await prefs).setString(_keyBackendCameraId, cameraId);
 }

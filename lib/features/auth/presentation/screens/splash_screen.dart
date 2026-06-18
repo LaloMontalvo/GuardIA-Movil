@@ -129,6 +129,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!hasSeenOnboarding) {
       context.go('/onboarding');
     } else if (guard.isLoggedIn) {
+      // Cargar persistencia del 2FA (y otros) de forma asíncrona
+      await ref.read(sessionServiceProvider).init();
       // Validar perfil Firestore antes de permitir acceso
       try {
         await guard.validateProfile();
@@ -137,7 +139,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         if (!mounted) return;
 
         if (guard.isProfileValid) {
-          context.go('/home');
+          if (!ref.read(sessionServiceProvider).is2faVerified) {
+             context.go('/two-factor');
+          } else {
+             context.go('/home'); // Router lo redirigirá adecuadamente dependiendo si es operator o admin
+          }
         } else {
           context.go('/login');
         }

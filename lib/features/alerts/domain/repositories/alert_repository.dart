@@ -12,5 +12,17 @@ abstract class AlertRepository {
   Future<Alert> updateAlert(String id, String status, String? note);
 
   /// Filtrar alertas por status
-  Future<List<Alert>> getAlertsByStatus(String status);
+  /// Crear un nuevo reporte
+  Future<void> createReport({
+    required String type,
+    required String priority,
+    required String description,
+    required String locationJson,
+    required String createdByUserId,
+    required String role,
+    required String status,
+  });
+
+  /// Enviar alerta de pánico
+  Future<void> sendPanic();
 }

@@ -45,6 +45,17 @@ class SecureStorageService {
     return await _storage.read(key: AppConstants.userDataKey);
   }
 
+  // ========== 2FA State ==========
+
+  Future<void> save2faVerified(bool isVerified) async {
+    await _storage.write(key: '2fa_verified', value: isVerified.toString());
+  }
+
+  Future<bool> get2faVerified() async {
+    final value = await _storage.read(key: '2fa_verified');
+    return value == 'true';
+  }
+
   // ========== Utilities ==========
 
   Future<bool> hasTokens() async {
@@ -59,5 +70,6 @@ class SecureStorageService {
 
   Future<void> deleteAll() async {
     await _storage.deleteAll();
+    await _storage.delete(key: '2fa_verified');
   }
 }

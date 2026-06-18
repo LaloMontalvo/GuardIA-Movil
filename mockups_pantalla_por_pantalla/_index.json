@@ -1,0 +1,187 @@
+﻿[
+    {
+        "file":  "01_admin_panel_screen_exacto.jpg",
+        "source":  "lib\\features\\admin\\presentation\\screens\\admin_panel_screen.dart",
+        "title":  "AdministraciÃ³n"
+    },
+    {
+        "file":  "02_alert_detail_screen_exacto.jpg",
+        "source":  "lib\\features\\alerts\\presentation\\screens\\alert_detail_screen.dart",
+        "title":  "Detalle de alerta"
+    },
+    {
+        "file":  "03_alerts_list_screen_exacto.jpg",
+        "source":  "lib\\features\\alerts\\presentation\\screens\\alerts_list_screen.dart",
+        "title":  "Alertas"
+    },
+    {
+        "file":  "04_create_incident_screen_exacto.jpg",
+        "source":  "lib\\features\\alerts\\presentation\\screens\\create_incident_screen.dart",
+        "title":  "Reportar Incidente"
+    },
+    {
+        "file":  "05_panic_screen_exacto.jpg",
+        "source":  "lib\\features\\alerts\\presentation\\screens\\panic_screen.dart",
+        "title":  "BotÃ³n de PÃ¡nico"
+    },
+    {
+        "file":  "06_forgot_password_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\forgot_password_screen.dart",
+        "title":  "Recuperar contraseÃ±a"
+    },
+    {
+        "file":  "07_login_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\login_screen.dart",
+        "title":  "Login"
+    },
+    {
+        "file":  "08_maintenance_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\maintenance_screen.dart",
+        "title":  "Maintenance"
+    },
+    {
+        "file":  "09_onboarding_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\onboarding_screen.dart",
+        "title":  "Onboarding"
+    },
+    {
+        "file":  "10_otp_verification_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\otp_verification_screen.dart",
+        "title":  "VerificaciÃ³n"
+    },
+    {
+        "file":  "11_permissions_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\permissions_screen.dart",
+        "title":  "Permiso de $name"
+    },
+    {
+        "file":  "12_register_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\register_screen.dart",
+        "title":  "Crear cuenta"
+    },
+    {
+        "file":  "13_splash_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\splash_screen.dart",
+        "title":  "Splash"
+    },
+    {
+        "file":  "14_welcome_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\welcome_screen.dart",
+        "title":  "Welcome"
+    },
+    {
+        "file":  "15_zone_selection_screen_exacto.jpg",
+        "source":  "lib\\features\\auth\\presentation\\screens\\zone_selection_screen.dart",
+        "title":  "Zone Selection"
+    },
+    {
+        "file":  "16_add_camera_screen_exacto.jpg",
+        "source":  "lib\\features\\cameras\\presentation\\screens\\add_camera_screen.dart",
+        "title":  "Agregar CÃ¡mara"
+    },
+    {
+        "file":  "17_camera_detail_screen_exacto.jpg",
+        "source":  "lib\\features\\cameras\\presentation\\screens\\camera_detail_screen.dart",
+        "title":  "CÃ¡mara"
+    },
+    {
+        "file":  "18_cameras_list_screen_exacto.jpg",
+        "source":  "lib\\features\\cameras\\presentation\\screens\\cameras_list_screen.dart",
+        "title":  "CÃ¡maras"
+    },
+    {
+        "file":  "19_edit_camera_screen_exacto.jpg",
+        "source":  "lib\\features\\cameras\\presentation\\screens\\edit_camera_screen.dart",
+        "title":  "Editar CÃ¡mara"
+    },
+    {
+        "file":  "20_live_view_screen_exacto.jpg",
+        "source":  "lib\\features\\cameras\\presentation\\screens\\live_view_screen.dart",
+        "title":  "CÃ¡mara ${widget.cameraId}"
+    },
+    {
+        "file":  "21_multi_camera_screen_exacto.jpg",
+        "source":  "lib\\features\\cameras\\presentation\\screens\\multi_camera_screen.dart",
+        "title":  "Multi-CÃ¡mara"
+    },
+    {
+        "file":  "22_dashboard_screen_exacto.jpg",
+        "source":  "lib\\features\\dashboard\\presentation\\screens\\dashboard_screen.dart",
+        "title":  "Dashboard"
+    },
+    {
+        "file":  "23_about_screen_exacto.jpg",
+        "source":  "lib\\features\\help\\presentation\\screens\\about_screen.dart",
+        "title":  "Acerca de"
+    },
+    {
+        "file":  "24_help_screen_exacto.jpg",
+        "source":  "lib\\features\\help\\presentation\\screens\\help_screen.dart",
+        "title":  "Ayuda y Soporte"
+    },
+    {
+        "file":  "25_map_screen_exacto.jpg",
+        "source":  "lib\\features\\map\\presentation\\screens\\map_screen.dart",
+        "title":  "Map"
+    },
+    {
+        "file":  "26_notifications_screen_exacto.jpg",
+        "source":  "lib\\features\\notifications\\presentation\\screens\\notifications_screen.dart",
+        "title":  "Notificaciones"
+    },
+    {
+        "file":  "27_evidence_screen_exacto.jpg",
+        "source":  "lib\\features\\recordings\\presentation\\screens\\evidence_screen.dart",
+        "title":  "Nuevo caso de evidencia"
+    },
+    {
+        "file":  "28_recordings_list_screen_exacto.jpg",
+        "source":  "lib\\features\\recordings\\presentation\\screens\\recordings_list_screen.dart",
+        "title":  "Grabaciones"
+    },
+    {
+        "file":  "29_my_reports_screen_exacto.jpg",
+        "source":  "lib\\features\\reports\\presentation\\screens\\my_reports_screen.dart",
+        "title":  "Mis reportes"
+    },
+    {
+        "file":  "30_report_confirmation_screen_exacto.jpg",
+        "source":  "lib\\features\\reports\\presentation\\screens\\report_confirmation_screen.dart",
+        "title":  "Report Confirmation"
+    },
+    {
+        "file":  "31_reports_screen_exacto.jpg",
+        "source":  "lib\\features\\reports\\presentation\\screens\\reports_screen.dart",
+        "title":  "BitÃ¡cora de Actividad"
+    },
+    {
+        "file":  "32_more_screen_exacto.jpg",
+        "source":  "lib\\features\\settings\\presentation\\screens\\more_screen.dart",
+        "title":  "More"
+    },
+    {
+        "file":  "33_privacy_screen_exacto.jpg",
+        "source":  "lib\\features\\settings\\presentation\\screens\\privacy_screen.dart",
+        "title":  "Privacidad"
+    },
+    {
+        "file":  "34_profile_screen_exacto.jpg",
+        "source":  "lib\\features\\settings\\presentation\\screens\\profile_screen.dart",
+        "title":  "Cambiar contraseÃ±a"
+    },
+    {
+        "file":  "35_security_screen_exacto.jpg",
+        "source":  "lib\\features\\settings\\presentation\\screens\\security_screen.dart",
+        "title":  "Seguridad"
+    },
+    {
+        "file":  "36_settings_screen_exacto.jpg",
+        "source":  "lib\\features\\settings\\presentation\\screens\\settings_screen.dart",
+        "title":  "Ajustes"
+    },
+    {
+        "file":  "37_storage_screen_exacto.jpg",
+        "source":  "lib\\features\\settings\\presentation\\screens\\storage_screen.dart",
+        "title":  "Almacenamiento"
+    }
+]
